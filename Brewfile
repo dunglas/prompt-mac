@@ -43,6 +43,7 @@ cask "protonvpn"
 cask "signal"
 cask "slack"
 cask "tailscale-app"
+cask "telegram"
 cask "visual-studio-code"
 
 mas "LanguageTool", id: 1534275760
