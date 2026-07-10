@@ -13,6 +13,8 @@ Today, the engineering landscape has fundamentally shifted. We aren't just typin
 
 That's why I built `prompt-mac`. It's my personal, highly opinionated, one-shot setup script for **Apple Silicon macOS**. It configures an ultra-lean, hyper-focused ecosystem of CLI tools, apps, and editor configs tuned explicitly for **coding-agent workflows**.
 
+The whole machine is declared in a single [`mise.toml`](./mise.toml) and provisioned by [**mise**](https://mise.jdx.dev)'s `mise bootstrap` — one config for dev tools, Homebrew packages, casks, App Store apps, dotfiles, the login shell, and background maintenance. No sprawling shell scripts to maintain.
+
 It is **prompt to install, prompt to use, and completely AI-powered.**
 
 > 🚀 **Proudly Sponsored by [Les-Tilleuls.coop](https://les-tilleuls.coop)**
