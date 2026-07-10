@@ -42,7 +42,6 @@ znap source zdharma-continuum/fast-syntax-highlighting
 
 # Tool initializations & completions (cached via znap eval)
 znap eval starship 'starship init zsh'
-znap eval mise 'mise activate zsh; mise completion zsh'
 znap eval zoxide 'zoxide init zsh'
 znap eval fzf 'fzf --zsh'
 znap eval gh 'gh completion -s zsh'

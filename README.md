@@ -150,17 +150,17 @@ claude plugin install caveman@caveman
 
 Everything installed by the script is explicitly managed via the [`Brewfile`](./Brewfile). Below is the complete roadmap of what gets added to your system:
 
-### 📦 Language Runtimes (`mise`)
+### 📦 Language Runtimes (`brew`)
 
-We consciously bypass standard Homebrew for developer runtimes. Instead, we use [`mise`](https://github.com/jdx/mise) managed via a global [`mise.toml`](./mise.toml). This allows you to retain a solid global default while effortlessly pinning project-specific engine versions via local project manifests.
+Developer runtimes install straight from Homebrew, so they share the same daily update path as every other package and always track the latest stable release.
 
-| Runtime | Version | Notes |
-| --- | --- | --- |
-| **Node.js** | `lts` | Stable Long-Term Support build. |
-| **Go** | `latest` | Ready for cloud-native building. |
-| **PHP** | `latest` | High-performance native Homebrew bottles via the `naviapps/asdf-homebrew-php` tap (no slow source compilations). **Composer** is installed automatically alongside it. |
-| **Python** | `latest` | A clean global system interpreter for general scripting. |
-| **uv** | `latest` | The modern, hyper-fast standard for Python virtual environments and dependency management. |
+| Runtime | Notes |
+| --- | --- |
+| **Node.js** | Latest stable build, plus `npm`. |
+| **Go** | Ready for cloud-native building. |
+| **PHP** | Native Homebrew bottles (no slow source compilations). **Composer** is installed alongside it. |
+| **Python** | A clean global system interpreter for general scripting. |
+| **uv** | The modern, hyper-fast standard for Python virtual environments and dependency management. |
 
 ### 🖥️ Applications (`cask`)
 
@@ -212,7 +212,6 @@ When the installer runs, it automatically symlinks your local repository configu
 | --- | --- | --- |
 | [`.zshrc`](./.zshrc) | `~/.zshrc` | Sets up the `znap` plugin manager, Oh My Zsh modules (git, sudo, colored man pages), `fzf-tab` menus, aliases, and `$EDITOR` pathways. |
 | [`config.ghostty`](./config.ghostty) | `~/.config/ghostty/config` | Configures Ghostty options: dark/light theme syncing, drop-down "quake" layout keys, blur, and opacity settings. |
-| [`mise.toml`](./mise.toml) | `~/.config/mise/config.toml` | Declares and maintains your global development language versions. |
 | [`init.lua`](./init.lua) | `~/.config/nvim/init.lua` | A lightweight, zero-plugin, ultra-fast Neovim setup utilizing system clipboards, smart-case searching, persistent undo, and terminal color inheritance. |
 | [`settings.json`](./settings.json) | `~/Library/Application Support/Code/User/settings.json` | Configures production-ready layout adjustments, font sizes, and typography ligatures for VS Code. |
 
@@ -243,7 +242,7 @@ Before pulling the trigger on the installer, ensure your environment meets these
 * You are operating on **Apple Silicon** architecture (M1/M2/M3/M4 series). Intel hardware is not supported, and the installer assumes Homebrew paths live strictly at `/opt/homebrew`.
 * You are explicitly signed in to iCloud with an active Apple ID configured for the Mac App Store.
 * **First-run App Store installations:** For any App Store software your account has never downloaded before, the installer will launch deep-links straight to the app page so you can click "Get" once. The script then securely resumes.
-* **Important Precaution:** The configuration symlinking phase **replaces** pre-existing files found at `~/.zshrc`, Ghostty configurations, mise setups, and VS Code `settings.json`. If you have legacy dotfiles you want to save, back them up before running the installer!
+* **Important Precaution:** The configuration symlinking phase **replaces** pre-existing files found at `~/.zshrc`, Ghostty configurations, and VS Code `settings.json`. If you have legacy dotfiles you want to save, back them up before running the installer!
 
 ---
 
@@ -251,7 +250,7 @@ Before pulling the trigger on the installer, ensure your environment meets these
 
 * **Add or remove tools:** Modify the [`Brewfile`](./Brewfile) and re-run `./install.sh` (or manually trigger `brew bundle install --file=./Brewfile`).
 * **Prune software:** Want to make your machine mirror the repo perfectly? Running `brew bundle cleanup --file=./Brewfile` identifies extraneous packages; appending `--force` uninstalls them completely.
-* **Shift runtime language versions:** Edit [`mise.toml`](./mise.toml) and execute `mise install`.
+* **Shift runtime language versions:** Adjust the runtime formulae in the [`Brewfile`](./Brewfile) (for example pin `node@22`) and re-run `./install.sh`.
 
 ---
 
