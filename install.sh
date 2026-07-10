@@ -27,11 +27,13 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 
 # git is needed to clone this repo and, later, for mise to install the homebrew-php
-# plugin. The Homebrew installer above pulls in the Command Line Tools (which include
-# git), but guard anyway in case a partial CLT install left it missing.
+# plugin. The Homebrew installer above pulls in the Xcode Command Line Tools (which
+# include git), but guard anyway in case a partial CLT install left it missing.
 if ! command -v git >/dev/null 2>&1; then
-  echo "🔧 Installing git"
-  brew install git
+  echo "🔧 Installing the Xcode Command Line Tools (provides git; also required by Homebrew)"
+  xcode-select --install || true
+  echo "   Complete the CLT installer dialog if it appears; waiting for git…"
+  until command -v git >/dev/null 2>&1; do sleep 5; done
 fi
 
 # Locate the repo. Run normally, mise.toml sits next to this script. Run as a one-liner
