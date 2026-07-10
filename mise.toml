@@ -1,6 +1,0 @@
-[tools]
-node = "lts"
-go = "latest"
-homebrew-php = "latest"
-uv = "latest"
-python = "latest"

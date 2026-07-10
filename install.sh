@@ -66,22 +66,12 @@ ln -sfn "$DIR/.zshrc" "$HOME/.zshrc"
 mkdir -p "$HOME/.config/ghostty"
 ln -sfn "$DIR/config.ghostty" "$HOME/.config/ghostty/config"
 
-mkdir -p "$HOME/.config/mise"
-ln -sfn "$DIR/mise.toml" "$HOME/.config/mise/config.toml"
-
 mkdir -p "$HOME/.config/nvim"
 ln -sfn "$DIR/init.lua" "$HOME/.config/nvim/init.lua"
 
 VSCODE_USER="$HOME/Library/Application Support/Code/User"
 mkdir -p "$VSCODE_USER"
 ln -sfn "$DIR/settings.json" "$VSCODE_USER/settings.json"
-
-# Language runtimes (Node, Python/uv, PHP, Go) from the global mise config.
-# PHP uses the naviapps/asdf-homebrew-php plugin (Homebrew bottles, no source build),
-# which isn't in mise's default registry, so register it first.
-echo "🧰 Installing language runtimes"
-mise plugins install --force homebrew-php https://github.com/naviapps/asdf-homebrew-php.git
-mise install
 
 # Docker Compose and Buildx are Homebrew formulae, but the `docker` CLI only searches a few system
 # dirs for plugins — none of which is Homebrew's on Apple Silicon. Symlink them into the user plugin
