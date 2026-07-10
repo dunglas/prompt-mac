@@ -46,7 +46,7 @@ docker-cli = "latest"      # the `docker` CLI
 docker-compose = "latest"  # `docker compose` plugin (linked in the bootstrap task)
 mas = "latest"             # Mac App Store CLI (needed for the mas: packages below)
 
-# ── System packages via mise's built-in Homebrew installer (no Homebrew needed) ──
+# ── System packages via mise's Homebrew backend (Homebrew installed by install.sh) ──
 [bootstrap.packages]
 # Formulae not in the mise registry (PHP + Composer come from the homebrew-php plugin above)
 "brew:git" = "latest"             # a current git; the CLT's git is only used for the initial clone
@@ -117,9 +117,12 @@ colima status >/dev/null 2>&1 || colima start
 echo "🧩 Installing VS Code extensions"
 ext_file="${MISE_PROJECT_ROOT:-$PWD}/vscode-extensions.txt"
 if command -v code >/dev/null 2>&1 && [ -f "$ext_file" ]; then
-  grep -vE '^[[:space:]]*(#|$)' "$ext_file" | while read -r ext; do
+  # Feed via process substitution: a comments-only file makes grep exit 1,
+  # which pipefail would otherwise turn into a fatal bootstrap error.
+  while read -r ext; do
+    [ -n "$ext" ] || continue
     code --install-extension "$ext" --force >/dev/null || echo "  ⚠️  failed: $ext"
-  done
+  done < <(grep -vE '^[[:space:]]*(#|$)' "$ext_file" || true)
 fi
 
 echo "🧠 Updating tldr cache"; tldr --update || true

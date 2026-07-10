@@ -34,11 +34,11 @@ The script is entirely **idempotent**—you can re-run it (or the one-liner) any
 
 ### Manual Installation & Customization
 
-Prefer to read the code first or want to tweak it? Clone and run it by hand. The installer works identically either way (set `PROMPT_MAC_DIR` if you want to clone somewhere other than `~/prompt-mac`):
+Prefer to read the code first or want to tweak it? Clone and run it by hand. The installer works identically either way (set `PROMPT_MAC_DIR` if you want to clone somewhere other than `~/Developer/prompt-mac`):
 
 ```bash
-git clone https://github.com/dunglas/prompt-mac.git ~/prompt-mac
-cd ~/prompt-mac
+git clone https://github.com/dunglas/prompt-mac.git ~/Developer/prompt-mac
+cd ~/Developer/prompt-mac
 ./install.sh
 ```
 

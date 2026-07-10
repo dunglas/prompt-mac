@@ -26,6 +26,14 @@ if ! command -v mise >/dev/null 2>&1; then
 fi
 export PATH="$HOME/.local/bin:$PATH"
 
+# git is needed to clone this repo and, later, for mise to install the homebrew-php
+# plugin. The Homebrew installer above pulls in the Command Line Tools (which include
+# git), but guard anyway in case a partial CLT install left it missing.
+if ! command -v git >/dev/null 2>&1; then
+  echo "🔧 Installing git"
+  brew install git
+fi
+
 # Locate the repo. Run normally, mise.toml sits next to this script. Run as a one-liner
 # (`curl … | bash`) it doesn't, so clone the repo to a permanent home (dotfiles are
 # symlinked from it, so it must persist).
@@ -33,7 +41,7 @@ SOURCE="${BASH_SOURCE[0]:-}"
 DIR=""
 [[ -n "$SOURCE" ]] && DIR="$(cd -- "$(dirname -- "$SOURCE")" >/dev/null 2>&1 && pwd || true)"
 if [[ -z "$DIR" || ! -f "$DIR/mise.toml" ]]; then
-  DIR="${PROMPT_MAC_DIR:-$HOME/prompt-mac}"
+  DIR="${PROMPT_MAC_DIR:-$HOME/Developer/prompt-mac}"
   if [[ -d "$DIR/.git" ]]; then
     echo "📥 Updating prompt-mac in $DIR"
     git -C "$DIR" pull --ff-only || echo "⚠️  Couldn't fast-forward $DIR; using the existing checkout"
@@ -52,6 +60,12 @@ cd "$DIR"
 # The Homebrew-PHP plugin isn't in mise's registry, so register it before bootstrap
 # installs the [tools] (it provides `php` + `composer` from prebuilt bottles).
 mise plugins install --force homebrew-php https://github.com/naviapps/asdf-homebrew-php.git
+
+# App Store apps (mas: entries in mise.toml) fail to install unless you're signed in.
+echo "🛍  Heads-up: Mac App Store apps require you to be signed in to the App Store."
+if [[ -t 0 ]]; then
+  read -r -p "    Sign in via the App Store app if you haven't, then press Return to continue… " _ || true
+fi
 
 echo "🚀 Bootstrapping the machine with mise"
 mise trust "$DIR/mise.toml"
