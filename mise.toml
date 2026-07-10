@@ -12,6 +12,10 @@
 [settings]
 # Dotfiles are symlinked back to this repo, so the repo stays the source of truth.
 dotfiles.default_mode = "symlink"
+# mise's brew-cask backend evaluates each cask's Ruby DSL with a bundled ruby, so
+# bootstrap pulls ruby in. Fetch the precompiled binary rather than compiling from
+# source (ruby-build fails to build the psych extension on macOS 26).
+ruby.compile = false
 
 # ── Dev tools (mise registry: prebuilt binaries via aqua/ubi, no source builds) ──
 [tools]
