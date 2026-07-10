@@ -173,7 +173,7 @@ Developer runtimes install straight from Homebrew, so they share the same daily 
 * **Firefox** & **Google Chrome** — Pre-installed explicitly for cross-browser testing suites.
 * **AdGuard** — Lightweight, system-wide protection against ad networks and telemetry tracking.
 * **ProtonVPN** & **Tailscale** — Premium security and overlay mesh-networking capabilities.
-* **Slack**, **Discord**, & **Signal** — Your communication toolbelt.
+* **Slack**, **Discord**, **Signal**, & **Telegram** — Your communication toolbelt.
 
 ### 🍏 Mac App Store Apps (`mas`)
 
