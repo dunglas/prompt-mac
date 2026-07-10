@@ -1,6 +1,136 @@
+# prompt-mac — one mise config drives the whole machine via `mise bootstrap`.
+#
+# mise is the orchestrator: its registry provides the dev tools, and it installs
+# Homebrew bottles, casks and App Store apps declaratively (`brew:` / `brew-cask:` /
+# `mas:` below). Homebrew itself is also installed (see install.sh) as a base layer:
+# a familiar escape hatch, and required by the homebrew-php plugin. mise and Homebrew
+# share the /opt/homebrew prefix and interoperate — mise detects formulae a real
+# `brew` installed. (Caveat: `mise bootstrap packages prune` treats this config as
+# authoritative and would remove brew-installed formulae not listed here.)
+# `[dotfiles]` / `[bootstrap.*]` handle symlinks, login shell, the upgrade agent, etc.
+
+[settings]
+# Dotfiles are symlinked back to this repo, so the repo stays the source of truth.
+dotfiles.default_mode = "symlink"
+# mise's brew-cask backend evaluates each cask's Ruby DSL with a bundled ruby, so
+# bootstrap pulls ruby in. Fetch the precompiled binary rather than compiling from
+# source (ruby-build fails to build the psych extension on macOS 26).
+ruby.compile = false
+
+# ── Dev tools (mise registry: prebuilt binaries via aqua/ubi, no source builds) ──
 [tools]
+# Language runtimes
 node = "lts"
 go = "latest"
-homebrew-php = "latest"
+python = "latest"          # global interpreter for convenience; use uv per-project
 uv = "latest"
-python = "latest"
+# PHP via the Homebrew-bottle plugin (fast, no source build) — keeps per-project version
+# pinning and installs Composer alongside. The plugin is registered in install.sh.
+"homebrew-php" = "latest"
+
+# Modern CLI replacements & essentials
+bat = "latest"
+eza = "latest"
+fd = "latest"
+ripgrep = "latest"
+fzf = "latest"
+zoxide = "latest"
+jq = "latest"
+gh = "latest"
+neovim = "latest"
+starship = "latest"
+
+# AI, Kubernetes & containers
+rtk = "latest"             # AI token compressor
+kubectl = "latest"
+helm = "latest"
+k9s = "latest"
+colima = "latest"          # container runtime VM (started by the bootstrap task)
+docker-cli = "latest"      # the `docker` CLI
+docker-compose = "latest"  # `docker compose` plugin (linked in the bootstrap task)
+mas = "latest"             # Mac App Store CLI (needed for the mas: packages below)
+
+# ── System packages via mise's Homebrew backend (Homebrew installed by install.sh) ──
+[bootstrap.packages]
+# Formulae not in the mise registry (PHP + Composer come from the homebrew-php plugin above)
+"brew:git" = "latest"             # a current git; the CLT's git is only used for the initial clone
+"brew:tldr" = "latest"
+"brew:docker-buildx" = "latest"   # `docker buildx` plugin (linked in the bootstrap task)
+
+# GUI apps (casks)
+"brew-cask:ghostty" = "latest"
+"brew-cask:cmux" = "latest"
+"brew-cask:visual-studio-code" = "latest"
+"brew-cask:claude" = "latest"
+"brew-cask:claude-code" = "latest"
+"brew-cask:font-jetbrains-mono-nerd-font" = "latest"
+"brew-cask:firefox" = "latest"
+"brew-cask:google-chrome" = "latest"
+"brew-cask:adguard" = "latest"
+"brew-cask:protonvpn" = "latest"
+"brew-cask:tailscale-app" = "latest"
+"brew-cask:slack" = "latest"
+"brew-cask:discord" = "latest"
+"brew-cask:signal" = "latest"
+
+# Mac App Store (numeric ADAM IDs)
+"mas:1534275760" = "latest"   # LanguageTool (grammar + Safari extension)
+"mas:1519867270" = "latest"   # Refined GitHub (Safari extension)
+
+# ── Dotfiles (symlinked from this repo; sources resolve next to this file) ──
+[dotfiles]
+"~/.config/mise/config.toml" = { source = "mise.toml" }   # make this config global
+"~/.zshrc" = { source = ".zshrc" }
+"~/.config/ghostty/config" = { source = "config.ghostty" }
+"~/.config/nvim/init.lua" = { source = "init.lua" }
+"~/Library/Application Support/Code/User/settings.json" = { source = "settings.json" }
+
+# ── Login shell ──
+[bootstrap.user]
+login_shell = "/bin/zsh"
+
+# ── Daily maintenance: upgrade mise-managed tools (replaces brew autoupdate) ──
+[bootstrap.macos.launchd.agents.mise-upgrade]
+program = "~/.local/bin/mise"
+args = ["upgrade", "--yes"]
+start_calendar_interval = { hour = 4, minute = 0 }
+run_at_load = false
+stdout_path = "~/Library/Logs/mise-upgrade.log"
+stderr_path = "~/Library/Logs/mise-upgrade.err.log"
+
+# ── Imperative leftovers mise has no declarative section for ──
+# Runs near the end of `mise bootstrap` (it looks for a task literally named "bootstrap").
+[tasks.bootstrap]
+description = "Docker plugins, colima, and VS Code extensions"
+run = '''
+set -euo pipefail
+
+echo "🔌 Linking Docker CLI plugins (compose, buildx)"
+mkdir -p "$HOME/.docker/cli-plugins"
+if compose="$(mise which docker-compose 2>/dev/null)"; then
+  ln -sfn "$compose" "$HOME/.docker/cli-plugins/docker-compose"
+fi
+# buildx is a brew bottle installed to the canonical prefix
+if [ -x /opt/homebrew/bin/docker-buildx ]; then
+  ln -sfn /opt/homebrew/bin/docker-buildx "$HOME/.docker/cli-plugins/docker-buildx"
+fi
+
+echo "🐳 Starting colima"
+colima status >/dev/null 2>&1 || colima start
+
+echo "🧩 Installing VS Code extensions"
+ext_file="${MISE_PROJECT_ROOT:-$PWD}/vscode-extensions.txt"
+if command -v code >/dev/null 2>&1 && [ -f "$ext_file" ]; then
+  # Feed via process substitution: a comments-only file makes grep exit 1,
+  # which pipefail would otherwise turn into a fatal bootstrap error.
+  while read -r ext; do
+    [ -n "$ext" ] || continue
+    code --install-extension "$ext" --force >/dev/null || echo "  ⚠️  failed: $ext"
+  done < <(grep -vE '^[[:space:]]*(#|$)' "$ext_file" || true)
+fi
+
+echo "🧠 Updating tldr cache"; tldr --update || true
+
+echo "✅ Bootstrap task done."
+echo "   Next: run 'gh auth login' (GitHub) and 'rtk init --global' (agent token compression)."
+'''

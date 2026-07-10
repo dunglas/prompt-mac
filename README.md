@@ -13,6 +13,8 @@ Today, the engineering landscape has fundamentally shifted. We aren't just typin
 
 That's why I built `prompt-mac`. It's my personal, highly opinionated, one-shot setup script for **Apple Silicon macOS**. It configures an ultra-lean, hyper-focused ecosystem of CLI tools, apps, and editor configs tuned explicitly for **coding-agent workflows**.
 
+The whole machine is declared in a single [`mise.toml`](./mise.toml) and provisioned by [**mise**](https://mise.jdx.dev)'s `mise bootstrap` — one config for dev tools, Homebrew packages, casks, App Store apps, dotfiles, the login shell, and background maintenance. No sprawling shell scripts to maintain.
+
 It is **prompt to install, prompt to use, and completely AI-powered.**
 
 > 🚀 **Proudly Sponsored by [Les-Tilleuls.coop](https://les-tilleuls.coop)**
@@ -24,7 +26,7 @@ It is **prompt to install, prompt to use, and completely AI-powered.**
 
 Ready to ship? Open your stock terminal, paste this one-liner, and let it run.
 
-The script is entirely **idempotent**—you can re-run it (or the one-liner) anytime to pick up upstream changes to the `Brewfile` or configurations. Already-installed packages are safely skipped.
+The script is entirely **idempotent**—you can re-run it (or the one-liner) anytime to pick up upstream changes to [`mise.toml`](./mise.toml) or configurations. Already-installed packages are safely skipped.
 
 ```console
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dunglas/prompt-mac/main/install.sh)"
@@ -32,11 +34,11 @@ The script is entirely **idempotent**—you can re-run it (or the one-liner) any
 
 ### Manual Installation & Customization
 
-Prefer to read the code first or want to tweak it? Clone and run it by hand. The installer works identically either way (set `PROMPT_MAC_DIR` if you want to clone somewhere other than `~/prompt-mac`):
+Prefer to read the code first or want to tweak it? Clone and run it by hand. The installer works identically either way (set `PROMPT_MAC_DIR` if you want to clone somewhere other than `~/Developer/prompt-mac`):
 
 ```bash
-git clone https://github.com/dunglas/prompt-mac.git ~/prompt-mac
-cd ~/prompt-mac
+git clone https://github.com/dunglas/prompt-mac.git ~/Developer/prompt-mac
+cd ~/Developer/prompt-mac
 ./install.sh
 ```
 
@@ -111,14 +113,14 @@ If you think in Vim motions, this setup speaks your language. Modal editing is h
                                      └──────────────────────┘
 ```
 
-The following tools ship directly in the core `Brewfile`:
+The following tools are declared in the single [`mise.toml`](./mise.toml):
 
 | Tool | Installed as | Purpose |
 | --- | --- | --- |
 | [Claude](https://claude.ai) | cask | Anthropic's official desktop application workspace. |
 | [Claude Code](https://claude.com/claude-code) | cask + extension | Anthropic's agentic CLI tool, working natively in the terminal and VS Code. |
 | [cmux](https://www.cmux.dev/) | cask | A multiplexed environment tailored for running AI agents side-by-side. |
-| [rtk](https://www.rtk-ai.app/) | brew | "Rust Token Killer" — intercepts and compresses bloated terminal command outputs before they hit the agent's context, dropping token usage by 60–90%. |
+| [rtk](https://www.rtk-ai.app/) | mise tool | "Rust Token Killer" — intercepts and compresses bloated terminal command outputs before they hit the agent's context, dropping token usage by 60–90%. |
 
 ### Setting Up rtk
 
@@ -148,23 +150,23 @@ claude plugin install caveman@caveman
 
 ## 🛠️ Complete Package Inventory
 
-Everything installed by the script is explicitly managed via the [`Brewfile`](./Brewfile). Below is the complete roadmap of what gets added to your system:
+Everything is declared in a single [`mise.toml`](./mise.toml) and installed by `mise bootstrap`: dev tools from mise's registry, and Homebrew bottles, casks, and App Store apps through mise's built-in installers. **Homebrew is installed too**, as a base layer and escape hatch (and because the PHP plugin needs it); mise installs into the same `/opt/homebrew` prefix and the two interoperate. Below is the complete roadmap:
 
 ### 📦 Language Runtimes (`mise`)
 
-We consciously bypass standard Homebrew for developer runtimes. Instead, we use [`mise`](https://github.com/jdx/mise) managed via a global [`mise.toml`](./mise.toml). This allows you to retain a solid global default while effortlessly pinning project-specific engine versions via local project manifests.
+Runtimes come from mise's registry (prebuilt binaries, no source builds), giving you a solid global default while letting any project pin its own versions via a local `mise.toml`.
 
 | Runtime | Version | Notes |
 | --- | --- | --- |
 | **Node.js** | `lts` | Stable Long-Term Support build. |
 | **Go** | `latest` | Ready for cloud-native building. |
-| **PHP** | `latest` | High-performance native Homebrew bottles via the `naviapps/asdf-homebrew-php` tap (no slow source compilations). **Composer** is installed automatically alongside it. |
+| **PHP** | `latest` | Via the [naviapps/asdf-homebrew-php](https://github.com/naviapps/asdf-homebrew-php) mise plugin — prebuilt Homebrew bottles (no source build) **with** per-project version pinning. **Composer** is installed alongside automatically. (This plugin is why Homebrew is kept as a base layer.) |
 | **Python** | `latest` | A clean global system interpreter for general scripting. |
 | **uv** | `latest` | The modern, hyper-fast standard for Python virtual environments and dependency management. |
 
-### 🖥️ Applications (`cask`)
+### 🖥️ Applications (mise `brew-cask:`)
 
-*Safari remains your primary system browser. Additional applications are installed cleanly without interfering with operating system boundaries:*
+*Installed as casks by mise's built-in Homebrew installer. Safari remains your primary system browser; additional applications are installed cleanly without interfering with operating system boundaries:*
 
 * **Ghostty** & **cmux** — Your primary terminal emulator and multi-agent workflow workspace.
 * **Visual Studio Code** — The premier GUI code editor.
@@ -175,14 +177,16 @@ We consciously bypass standard Homebrew for developer runtimes. Instead, we use 
 * **ProtonVPN** & **Tailscale** — Premium security and overlay mesh-networking capabilities.
 * **Slack**, **Discord**, & **Signal** — Your communication toolbelt.
 
-### 🍏 Mac App Store Apps (`mas`)
+### 🍏 Mac App Store Apps (mise `mas:`)
 
 * **LanguageTool** — Localized, high-fidelity grammar, style, and spell checking providing system-wide integrations and Safari extension support.
 * **Refined GitHub** — An essential browser extension that significantly cleans up and streamlines the GitHub user interface.
 
-### 🧩 VS Code Extensions (`vscode`)
+### 🧩 VS Code Extensions ([`vscode-extensions.txt`](./vscode-extensions.txt))
 
-* **Claude Code** — Instant agent access right inside your project windows.
+*mise has no declarative section for editor extensions, so the `bootstrap` task installs the list in [`vscode-extensions.txt`](./vscode-extensions.txt) via `code --install-extension`. Edit that file to add or remove extensions.*
+
+* **Claude Code** & **mise** — Instant agent access, plus the mise integration that points VS Code at mise-provided tools.
 * **GitLens** & **GitHub Pull Requests** — Seamless visual blame, historical timelines, and deep pull request management.
 * **EditorConfig**, **markdownlint**, & **YAML** — Syntax linting and strict code formatting compliance.
 * **Vim** — Bringing universal modal keyboard navigation into the GUI editor.
@@ -193,7 +197,7 @@ We consciously bypass standard Homebrew for developer runtimes. Instead, we use 
 
 ## 🐳 Container Infrastructure & Cloud-Native Tooling
 
-* **No Docker Desktop.** We keep macOS fast and lean. All containerization runs cleanly using a lightweight, open-source background VM managed by **colima** paired with standard open-source `docker` binaries. The Compose and Buildx plugins are automatically symlinked directly into `~/.docker/cli-plugins`, so commands like `docker compose` and `docker buildx` work flawlessly out of the box.
+* **No Docker Desktop.** We keep macOS fast and lean. Containerization runs on a lightweight, open-source background VM managed by **colima**, with the open-source `docker` CLI and Compose plugin from mise's registry (Buildx as a Homebrew bottle). The `bootstrap` task symlinks the Compose and Buildx plugins into `~/.docker/cli-plugins`, so `docker compose` and `docker buildx` work flawlessly out of the box.
 * **Local Kubernetes.** Full infrastructure support using `kubectl`, `helm`, and the terminal UI dashboard **`k9s`**. Need a local sandbox cluster? Simply spin up the built-in k3s cluster layer by running:
 
 ```bash
@@ -206,13 +210,13 @@ This houses Kubernetes elegantly inside the exact same underlying VM running you
 
 ## ⚙️ Configuration File Mapping
 
-When the installer runs, it automatically symlinks your local repository configuration files out into your system profile. Modifying a file within your local repo immediately updates your live runtime environment:
+`mise bootstrap` applies the [`[dotfiles]`](https://mise.jdx.dev/dotfiles.html) section, symlinking your repo configuration files out into your system profile. Modifying a file within your local repo immediately updates your live runtime environment:
 
 | Repository Source | System Destination | Purpose |
 | --- | --- | --- |
 | [`.zshrc`](./.zshrc) | `~/.zshrc` | Sets up the `znap` plugin manager, Oh My Zsh modules (git, sudo, colored man pages), `fzf-tab` menus, aliases, and `$EDITOR` pathways. |
 | [`config.ghostty`](./config.ghostty) | `~/.config/ghostty/config` | Configures Ghostty options: dark/light theme syncing, drop-down "quake" layout keys, blur, and opacity settings. |
-| [`mise.toml`](./mise.toml) | `~/.config/mise/config.toml` | Declares and maintains your global development language versions. |
+| [`mise.toml`](./mise.toml) | `~/.config/mise/config.toml` | The single source of truth for the whole machine — tools, packages, casks, dotfiles, login shell, and maintenance. Symlinked here so its `[tools]` are available globally. |
 | [`init.lua`](./init.lua) | `~/.config/nvim/init.lua` | A lightweight, zero-plugin, ultra-fast Neovim setup utilizing system clipboards, smart-case searching, persistent undo, and terminal color inheritance. |
 | [`settings.json`](./settings.json) | `~/Library/Application Support/Code/User/settings.json` | Configures production-ready layout adjustments, font sizes, and typography ligatures for VS Code. |
 
@@ -220,18 +224,20 @@ When the installer runs, it automatically symlinks your local repository configu
 
 ## 🔄 Automated System Maintenance
 
-Your computer shouldn't degrade over time. To solve this, the script provisions an automated background `launchd` service driven by the [`DomT4/homebrew-autoupdate`](https://github.com/DomT4/homebrew-autoupdate) tap. **Once a day** (and automatically upon user login), the system securely executes:
+Your computer shouldn't degrade over time. `mise bootstrap` installs a user `launchd` agent (`dev.mise.mise-upgrade`, declared in [`mise.toml`](./mise.toml)) that runs **once a day** at 04:00:
 
-* `brew update` — Syncs the latest available software package recipes.
-* `brew upgrade --sudo` — Securely upgrades installed formulae and apps (including background casks like VPNs or system drivers, meaning you may occasionally see a quick system password request).
-* `brew cleanup` — Scrubs out legacy cache versions and dangling temporary files.
+```sh
+mise upgrade --yes
+```
+
+This keeps every mise-managed dev tool current — no `sudo`, no password prompts. GUI apps (Chrome, VS Code, Ghostty, Claude…) update themselves. To re-converge the system packages and casks to their latest, re-run `mise bootstrap` (or just `mise bootstrap packages apply`).
 
 ### Managing Maintenance Routines
 
 ```bash
-brew autoupdate status   # View daemon health, activity status, and logs
-brew autoupdate stop     # Temporarily pause the automated schedule
-brew autoupdate delete   # Permanently remove the background automated job
+mise upgrade                                  # upgrade all tools right now
+mise bootstrap macos launchd-agents status    # is the daily agent loaded?
+launchctl bootout gui/$UID/dev.mise.mise-upgrade   # disable the agent
 ```
 
 ---
@@ -249,9 +255,10 @@ Before pulling the trigger on the installer, ensure your environment meets these
 
 ## 🎛️ Customization
 
-* **Add or remove tools:** Modify the [`Brewfile`](./Brewfile) and re-run `./install.sh` (or manually trigger `brew bundle install --file=./Brewfile`).
-* **Prune software:** Want to make your machine mirror the repo perfectly? Running `brew bundle cleanup --file=./Brewfile` identifies extraneous packages; appending `--force` uninstalls them completely.
+* **Add or remove tools, packages, or apps:** Edit [`mise.toml`](./mise.toml) (`[tools]` or `[bootstrap.packages]`) and re-run `mise bootstrap` (or `./install.sh`).
+* **Prune Homebrew packages:** Make your machine mirror the config with `mise bootstrap packages prune --manager brew`, which removes bottles no longer declared.
 * **Shift runtime language versions:** Edit [`mise.toml`](./mise.toml) and execute `mise install`.
+* **VS Code extensions:** Edit [`vscode-extensions.txt`](./vscode-extensions.txt) and re-run `mise bootstrap` (or `mise run bootstrap`).
 
 ---
 

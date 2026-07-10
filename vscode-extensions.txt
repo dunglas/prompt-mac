@@ -1,0 +1,32 @@
+# VS Code extensions, installed by the `mise bootstrap` task via `code --install-extension`.
+# One extension id per line; blank lines and #-comments are ignored.
+
+# AI & mise
+anthropic.claude-code
+hverlin.mise-vscode
+
+# General
+eamodio.gitlens
+github.vscode-pull-request-github
+editorconfig.editorconfig
+davidanson.vscode-markdownlint
+redhat.vscode-yaml
+vscodevim.vim
+
+# Containers & orchestration
+ms-azuretools.vscode-docker
+ms-kubernetes-tools.vscode-kubernetes-tools
+
+# JS/TS
+dbaeumer.vscode-eslint
+esbenp.prettier-vscode
+
+# PHP
+bmewburn.vscode-intelephense-client
+
+# Python
+ms-python.python
+charliermarsh.ruff
+
+# Go
+golang.go
