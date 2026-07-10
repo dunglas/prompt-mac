@@ -23,7 +23,7 @@ SOURCE="${BASH_SOURCE[0]:-}"
 DIR=""
 [[ -n "$SOURCE" ]] && DIR="$(cd -- "$(dirname -- "$SOURCE")" >/dev/null 2>&1 && pwd || true)"
 if [[ -z "$DIR" || ! -f "$DIR/Brewfile" ]]; then
-  DIR="${PROMPT_MAC_DIR:-$HOME/prompt-mac}"
+  DIR="${PROMPT_MAC_DIR:-$HOME/Developer/prompt-mac}"
   command -v git >/dev/null 2>&1 || brew install git
   if [[ -d "$DIR/.git" ]]; then
     echo "📥 Updating prompt-mac in $DIR"
