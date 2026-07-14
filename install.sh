@@ -76,6 +76,12 @@ ln -sfn "$DIR/settings.json" "$VSCODE_USER/settings.json"
 # Git commit signing over SSH. Generate a signing key if absent, register it as a local allowed
 # signer (so `git log --show-signature` verifies), and upload it to GitHub for the "Verified" badge.
 echo "🔐 Configuring Git commit signing"
+# Offer GitHub sign-in up front so identity and signing key are set in one pass. Skippable for users
+# without an account. Only when attached to a terminal; piped installs (curl | bash) fall through.
+if [[ -t 0 ]] && ! gh auth status >/dev/null 2>&1; then
+  read -rp "Sign in to GitHub now to enable signed, verified commits? [Y/n] " reply
+  [[ "$reply" =~ ^[Nn] ]] || gh auth login
+fi
 # Capture any identity from the real ~/.gitconfig before moving it aside, so a user whose
 # name/email lived only there isn't left without one after the symlink shadows it.
 EXISTING_NAME="$(git config --global user.name 2>/dev/null || true)"
