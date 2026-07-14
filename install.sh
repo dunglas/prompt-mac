@@ -73,6 +73,47 @@ VSCODE_USER="$HOME/Library/Application Support/Code/User"
 mkdir -p "$VSCODE_USER"
 ln -sfn "$DIR/settings.json" "$VSCODE_USER/settings.json"
 
+# Git commit signing over SSH. Generate a signing key if absent, register it as a local allowed
+# signer (so `git log --show-signature` verifies), and upload it to GitHub for the "Verified" badge.
+echo "🔐 Configuring Git commit signing"
+# ~/.gitconfig commonly pre-exists; back up a real file once so the symlink doesn't eat it.
+[[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]] && mv "$HOME/.gitconfig" "$HOME/.gitconfig.pre-prompt-mac"
+ln -sfn "$DIR/.gitconfig" "$HOME/.gitconfig"
+
+# Identity is personal, so keep it out of the committed .gitconfig and in git's XDG config.
+# Reuse an existing identity; otherwise derive one from the authenticated GitHub account.
+mkdir -p "$HOME/.config/git"
+if ! git config --get user.email >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  gh_login="$(gh api user --jq .login)"
+  gh_id="$(gh api user --jq .id)"
+  git config --file "$HOME/.config/git/config" user.name "$(gh api user --jq '.name // .login')"
+  git config --file "$HOME/.config/git/config" user.email "$(gh api user --jq ".email // \"${gh_id}+${gh_login}@users.noreply.github.com\"")"
+fi
+
+GIT_EMAIL="$(git config --get user.email 2>/dev/null || true)"
+if [[ -z "$GIT_EMAIL" ]]; then
+  echo "⚠️  No Git identity found. Run 'gh auth login' or set user.email, then re-run this script to finish signing setup."
+else
+  SIGNING_KEY="$HOME/.ssh/id_ed25519"
+  if [[ ! -f "$SIGNING_KEY" ]]; then
+    echo "🔑 Generating an SSH signing key ($SIGNING_KEY)"
+    mkdir -p "$HOME/.ssh"
+    ssh-keygen -t ed25519 -C "$GIT_EMAIL" -f "$SIGNING_KEY" -N ""
+  fi
+
+  signer_line="$GIT_EMAIL namespaces=\"git\" $(cat "$SIGNING_KEY.pub")"
+  touch "$HOME/.config/git/allowed_signers"
+  grep -qxF "$signer_line" "$HOME/.config/git/allowed_signers" || echo "$signer_line" >>"$HOME/.config/git/allowed_signers"
+
+  # Upload the public key to GitHub as a signing key (needs `gh auth login`; skipped otherwise).
+  if gh auth status >/dev/null 2>&1; then
+    key_body="$(awk '{print $2}' "$SIGNING_KEY.pub")"
+    if ! gh ssh-key list 2>/dev/null | grep -q "$key_body"; then
+      gh ssh-key add "$SIGNING_KEY.pub" --type signing --title "$(scutil --get ComputerName 2>/dev/null || hostname -s) (prompt-mac)"
+    fi
+  fi
+fi
+
 # Docker Compose and Buildx are Homebrew formulae, but the `docker` CLI only searches a few system
 # dirs for plugins — none of which is Homebrew's on Apple Silicon. Symlink them into the user plugin
 # dir so the plugin forms (`docker compose`, `docker buildx`) work, not just the standalone binaries.
@@ -101,4 +142,4 @@ if [[ "${SHELL:-}" != *zsh ]]; then
 fi
 
 echo "✅ Done. Restart your terminal — znap will bootstrap plugins on first launch."
-echo "    Reminder: run 'gh auth login' for GitHub."
+echo "    Reminder: run 'gh auth login', then re-run this script to upload the signing key to GitHub."
