@@ -57,7 +57,12 @@ fi
 
 # Packages (brews, casks, mas apps, VS Code extensions)
 echo "📦 Installing packages from Brewfile"
-brew bundle install --file="$DIR/Brewfile"
+if [[ -n "${CI:-}" ]]; then
+  # CI can't sign in to the App Store, so mas installs fail. Drop the mas lines there.
+  brew bundle install --file=<(grep -v '^mas ' "$DIR/Brewfile")
+else
+  brew bundle install --file="$DIR/Brewfile"
+fi
 
 # Config files (symlinked so the repo stays the source of truth)
 echo "🔗 Linking config files"
@@ -151,21 +156,27 @@ for plugin in docker-compose docker-buildx; do
   ln -sfn "$(brew --prefix "$plugin")/bin/$plugin" "$HOME/.docker/cli-plugins/$plugin"
 done
 
-# Services
-echo "🐳 Starting colima service"
-brew services start colima
+# Services (colima needs virtualization the CI runner doesn't grant)
+if [[ -z "${CI:-}" ]]; then
+  echo "🐳 Starting colima service"
+  brew services start colima
+fi
 
 # Automatic daily Homebrew update + upgrade + cleanup (via the DomT4/homebrew-autoupdate tap).
 # Homebrew requires third-party tap commands to be explicitly trusted before they can run.
-echo "🔄 Enabling automatic Homebrew updates"
-brew trust --command domt4/autoupdate/autoupdate
-if ! ls "$HOME/Library/LaunchAgents/"*homebrew-autoupdate* >/dev/null 2>&1; then
-  brew autoupdate start 86400 --upgrade --cleanup --immediate --sudo
+# Skipped in CI: --sudo needs a cached password and installs a LaunchAgent.
+if [[ -z "${CI:-}" ]]; then
+  echo "🔄 Enabling automatic Homebrew updates"
+  brew trust --command domt4/autoupdate/autoupdate
+  if ! ls "$HOME/Library/LaunchAgents/"*homebrew-autoupdate* >/dev/null 2>&1; then
+    brew autoupdate start 86400 --upgrade --cleanup --immediate --sudo
+  fi
 fi
 
 tldr --update || true
 
-if [[ "${SHELL:-}" != *zsh ]]; then
+# chsh needs a password, so skip it in CI.
+if [[ -z "${CI:-}" && "${SHELL:-}" != *zsh ]]; then
   chsh -s "$(command -v zsh)"
 fi
 

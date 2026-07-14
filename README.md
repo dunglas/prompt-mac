@@ -99,7 +99,7 @@ If you think in Vim motions, this setup speaks your language. Modal editing is h
 
 `prompt-mac` treats AI agents as first-class citizens. The environment is engineered from the ground up to support massive agent workloads without blowing past your API limits.
 
-```
+```text
 ┌─────────────────┐      Output      ┌──────────────────────┐
 │  Shell Command  │ ────────────────> │ rtk (Token Killer)   │
 └─────────────────┘                  └──────────────────────┘
