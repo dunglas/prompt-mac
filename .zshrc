@@ -4,6 +4,9 @@ ZNAP_DIR="$HOME/.znap"
   git clone --depth 1 https://github.com/marlonrichert/zsh-snap.git "$ZNAP_DIR"
 source "$ZNAP_DIR/znap.zsh"
 
+# Keep plugin clones out of $HOME (znap defaults repos-dir to $HOME)
+zstyle ':znap:*' repos-dir "$ZNAP_DIR/repos"
+
 # History Configuration
 HISTFILE=~/.zsh_history
 HISTSIZE=10000

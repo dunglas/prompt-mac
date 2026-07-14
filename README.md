@@ -214,6 +214,20 @@ When the installer runs, it automatically symlinks your local repository configu
 | [`config.ghostty`](./config.ghostty) | `~/.config/ghostty/config` | Configures Ghostty options: dark/light theme syncing, drop-down "quake" layout keys, blur, and opacity settings. |
 | [`init.lua`](./init.lua) | `~/.config/nvim/init.lua` | A lightweight, zero-plugin, ultra-fast Neovim setup utilizing system clipboards, smart-case searching, persistent undo, and terminal color inheritance. |
 | [`settings.json`](./settings.json) | `~/Library/Application Support/Code/User/settings.json` | Configures production-ready layout adjustments, font sizes, and typography ligatures for VS Code. |
+| [`.gitconfig`](./.gitconfig) | `~/.gitconfig` | Enables SSH-based commit and tag signing (`commit.gpgsign`) and points Git at your `~/.ssh/id_ed25519.pub` signing key. Your identity (name/email) is kept out of this shared file and written to `~/.config/git/config` instead. An existing `~/.gitconfig` is backed up to `~/.gitconfig.pre-prompt-mac` on first run. |
+
+---
+
+## 🔐 Signed Commits
+
+Every commit and tag is signed over SSH by default. On first run the installer:
+
+* Sets your Git identity in `~/.config/git/config`, reusing any existing `user.email` or deriving name and email from your authenticated GitHub account.
+* Generates an `ed25519` signing key at `~/.ssh/id_ed25519` if one doesn't exist.
+* Registers it in `~/.config/git/allowed_signers`, so `git log --show-signature` verifies locally.
+* Uploads the public key to GitHub as a **signing key** via `gh` (once you've run `gh auth login`), giving you the **Verified** badge on pushed commits.
+
+If you install before authenticating with GitHub and have no existing Git identity, run `gh auth login` and re-run `install.sh` to set your identity and push the key up.
 
 ---
 
