@@ -76,18 +76,38 @@ ln -sfn "$DIR/settings.json" "$VSCODE_USER/settings.json"
 # Git commit signing over SSH. Generate a signing key if absent, register it as a local allowed
 # signer (so `git log --show-signature` verifies), and upload it to GitHub for the "Verified" badge.
 echo "🔐 Configuring Git commit signing"
-# ~/.gitconfig commonly pre-exists; back up a real file once so the symlink doesn't eat it.
-[[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]] && mv "$HOME/.gitconfig" "$HOME/.gitconfig.pre-prompt-mac"
+# Capture any identity from the real ~/.gitconfig before moving it aside, so a user whose
+# name/email lived only there isn't left without one after the symlink shadows it.
+EXISTING_NAME="$(git config --global user.name 2>/dev/null || true)"
+EXISTING_EMAIL="$(git config --global user.email 2>/dev/null || true)"
+
+# ~/.gitconfig commonly pre-exists; back up a real file so the symlink doesn't eat it, without
+# clobbering a backup from an earlier run.
+if [[ -e "$HOME/.gitconfig" && ! -L "$HOME/.gitconfig" ]]; then
+  backup="$HOME/.gitconfig.pre-prompt-mac"
+  [[ -e "$backup" ]] && backup="$backup.$(date +%s)"
+  mv "$HOME/.gitconfig" "$backup"
+fi
 ln -sfn "$DIR/.gitconfig" "$HOME/.gitconfig"
 
 # Identity is personal, so keep it out of the committed .gitconfig and in git's XDG config.
-# Reuse an existing identity; otherwise derive one from the authenticated GitHub account.
+# Reuse whatever git can already see (incl. a prior run's XDG config), then the rescued identity,
+# then derive one from the authenticated GitHub account.
 mkdir -p "$HOME/.config/git"
-if ! git config --get user.email >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  gh_login="$(gh api user --jq .login)"
-  gh_id="$(gh api user --jq .id)"
-  git config --file "$HOME/.config/git/config" user.name "$(gh api user --jq '.name // .login')"
-  git config --file "$HOME/.config/git/config" user.email "$(gh api user --jq ".email // \"${gh_id}+${gh_login}@users.noreply.github.com\"")"
+if ! git config --get user.email >/dev/null 2>&1; then
+  if [[ -n "$EXISTING_EMAIL" ]]; then
+    git config --file "$HOME/.config/git/config" user.email "$EXISTING_EMAIL"
+    [[ -n "$EXISTING_NAME" ]] && git config --file "$HOME/.config/git/config" user.name "$EXISTING_NAME"
+  elif gh auth status >/dev/null 2>&1; then
+    gh_login="$(gh api user --jq .login)"
+    gh_id="$(gh api user --jq .id)"
+    gh_name="$(gh api user --jq '.name // empty')"
+    gh_email="$(gh api user --jq '.email // empty')"
+    [[ -z "$gh_name" ]] && gh_name="$gh_login"
+    [[ -z "$gh_email" ]] && gh_email="${gh_id}+${gh_login}@users.noreply.github.com"
+    git config --file "$HOME/.config/git/config" user.name "$gh_name"
+    git config --file "$HOME/.config/git/config" user.email "$gh_email"
+  fi
 fi
 
 GIT_EMAIL="$(git config --get user.email 2>/dev/null || true)"
@@ -100,6 +120,8 @@ else
     mkdir -p "$HOME/.ssh"
     ssh-keygen -t ed25519 -C "$GIT_EMAIL" -f "$SIGNING_KEY" -N ""
   fi
+  # Rebuild the public key from the private one if it's missing, so later reads don't abort under `set -e`.
+  [[ -f "$SIGNING_KEY.pub" ]] || ssh-keygen -y -f "$SIGNING_KEY" >"$SIGNING_KEY.pub"
 
   signer_line="$GIT_EMAIL namespaces=\"git\" $(cat "$SIGNING_KEY.pub")"
   touch "$HOME/.config/git/allowed_signers"
@@ -108,7 +130,7 @@ else
   # Upload the public key to GitHub as a signing key (needs `gh auth login`; skipped otherwise).
   if gh auth status >/dev/null 2>&1; then
     key_body="$(awk '{print $2}' "$SIGNING_KEY.pub")"
-    if ! gh ssh-key list 2>/dev/null | grep -q "$key_body"; then
+    if ! gh ssh-key list 2>/dev/null | grep -Fq -- "$key_body"; then
       gh ssh-key add "$SIGNING_KEY.pub" --type signing --title "$(scutil --get ComputerName 2>/dev/null || hostname -s) (prompt-mac)"
     fi
   fi
