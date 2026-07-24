@@ -48,7 +48,7 @@ cd ~/Developer/prompt-mac
 
 * 🧭 **macOS-native, not macOS-against.** We don't fight the system's sensible defaults. Safari stays your default browser; Finder, Spotlight, and friends are left completely alone. We *add* elite tooling rather than ripping out what already works natively.
 * 🪶 **Pragmatically minimalist.** I can't stand bloated, 5,000-line shell setups. Every configuration file in this repo is just a handful of lines. The value is in *which* tools get installed, leaning heavily on modern defaults and tweaking only what earns its keep.
-* 🤖 **AI-first context management.** Running coding agents blindly kills your token budget. A dedicated agent stack (Claude, Claude Code, cmux, `rtk`) is wired in from the start, featuring tools that aggressively cut token usage so you can keep costs low and context windows clear.
+* 🤖 **AI-first, out of the box.** A dedicated agent stack (Claude, Claude Code, cmux) is wired in from the start.
 * 🧰 **One toolbelt, everywhere.** No split brains. The exact same modern CLI tools feel completely at home whether you live in **Ghostty**/**cmux** or inside **VS Code**'s integrated terminal.
 
 ---
@@ -99,18 +99,6 @@ If you think in Vim motions, this setup speaks your language. Modal editing is h
 
 `prompt-mac` treats AI agents as first-class citizens. The environment is engineered from the ground up to support massive agent workloads without blowing past your API limits.
 
-```
-┌─────────────────┐      Output      ┌──────────────────────┐
-│  Shell Command  │ ────────────────> │ rtk (Token Killer)   │
-└─────────────────┘                  └──────────────────────┘
-                                                │
-                                                │ Compresses 60-90%
-                                                ▼
-                                     ┌──────────────────────┐
-                                     │  Claude Code Agent   │
-                                     └──────────────────────┘
-```
-
 The following tools ship directly in the core `Brewfile`:
 
 | Tool | Installed as | Purpose |
@@ -118,31 +106,6 @@ The following tools ship directly in the core `Brewfile`:
 | [Claude](https://claude.ai) | cask | Anthropic's official desktop application workspace. |
 | [Claude Code](https://claude.com/claude-code) | cask + extension | Anthropic's agentic CLI tool, working natively in the terminal and VS Code. |
 | [cmux](https://www.cmux.dev/) | cask | A multiplexed environment tailored for running AI agents side-by-side. |
-| [rtk](https://www.rtk-ai.app/) | brew | "Rust Token Killer" — intercepts and compresses bloated terminal command outputs before they hit the agent's context, dropping token usage by 60–90%. |
-
-### Setting Up rtk
-
-`rtk` is installed out of the box but remains dormant until registered. Running `rtk init` hooks a global wrapper into your environment configuration. Every shell command your agent executes is automatically optimized (e.g., `git status` dynamically processes through `rtk git status`):
-
-```sh
-rtk init --global
-
-```
-
-*Note: Make sure to restart any active coding agents after running this command! You can check your total infrastructure savings at any time by typing `rtk gain`.*
-
-### Recommended Upgrade: caveman
-
-While it isn't bundled into the system package manager directly, I highly recommend installing **[caveman](https://github.com/JuliusBrussee/caveman)**. This is a specialized skill for Claude Code that slashes ~65% of *output* tokens by prompting the model to respond concisely while preserving code integrity and error messages exactly.
-
-Because it works entirely locally without external network overhead, you can add it to your agent with:
-
-```bash
-claude plugin marketplace add JuliusBrussee/caveman
-claude plugin install caveman@caveman
-```
-
-*`rtk` and `caveman` form a perfect loop: `rtk` compresses what goes **into** the AI context, while `caveman` optimizes what comes **out** of it.*
 
 ---
 
