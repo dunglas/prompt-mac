@@ -57,11 +57,21 @@ fi
 
 # Packages (brews, casks, mas apps, VS Code extensions)
 echo "📦 Installing packages from Brewfile"
-if [[ -n "${CI:-}" ]]; then
-  # CI can't sign in to the App Store, so mas installs fail. Drop the mas lines there.
-  brew bundle install --file=<(grep -v '^mas ' "$DIR/Brewfile")
-else
-  brew bundle install --file="$DIR/Brewfile"
+install_bundle() {
+  if [[ -n "${CI:-}" ]]; then
+    # CI can't sign in to the App Store, so mas installs fail. Drop the mas lines there.
+    brew bundle install --file=<(grep -v '^mas ' "$DIR/Brewfile")
+  else
+    brew bundle install --file="$DIR/Brewfile"
+  fi
+}
+if ! install_bundle; then
+  # Homebrew's in-place cask upgrade (Homebrew/brew#15138) can leave a stale, non-directory
+  # Caskroom entry for auto-updating casks like visual-studio-code, which then blocks the next
+  # install attempt with "mv: cannot overwrite non-directory ... with directory ...". Clear it
+  # and retry once.
+  rm -rf "$(brew --caskroom)/visual-studio-code"
+  install_bundle
 fi
 
 # Config files (symlinked so the repo stays the source of truth)
